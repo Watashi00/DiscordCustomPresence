@@ -1,0 +1,316 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+mod rpc;
+
+use rpc::{DiscordRpcClient, PresenceCfg};
+use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::thread;
+use std::time::{Duration, Instant};
+
+struct RateState {
+    last: Option<Instant>,
+}
+impl Default for RateState {
+    fn default() -> Self { Self { last: None } }
+}
+
+fn rate_check(state: &Mutex<RateState>, min_delay: Duration) -> Result<(), String> {
+    let mut st = state.lock().unwrap();
+    if let Some(last) = st.last {
+        if last.elapsed() < min_delay {
+            return Err("Rate-limit: aguarde um pouco antes de repetir a ação.".to_string());
+        }
+    }
+    st.last = Some(Instant::now());
+    Ok(())
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RpcStatus {
+    Inactive,
+    Connecting,
+    Active,
+    Error,
+}
+impl RpcStatus {
+    fn as_str(&self) -> &'static str {
+        match self {
+            RpcStatus::Inactive => "inactive",
+            RpcStatus::Connecting => "connecting",
+            RpcStatus::Active => "active",
+            RpcStatus::Error => "error",
+        }
+    }
+}
+
+struct RpcWorker {
+    running: AtomicBool,
+    thread_alive: AtomicBool,
+
+    status: Mutex<RpcStatus>,
+    last_error: Mutex<Option<String>>,
+
+    cfg: Mutex<Option<PresenceCfg>>,
+    start_ts: Mutex<Option<i64>>, // ✅ novo: start fixo
+}
+
+impl Default for RpcWorker {
+    fn default() -> Self {
+        Self {
+            running: AtomicBool::new(false),
+            thread_alive: AtomicBool::new(false),
+            status: Mutex::new(RpcStatus::Inactive),
+            last_error: Mutex::new(None),
+            cfg: Mutex::new(None),
+            start_ts: Mutex::new(None),
+        }
+    }
+}
+
+fn set_status(w: &Arc<RpcWorker>, st: RpcStatus) {
+    *w.status.lock().unwrap() = st;
+}
+fn set_error(w: &Arc<RpcWorker>, msg: Option<String>) {
+    *w.last_error.lock().unwrap() = msg;
+}
+
+#[tauri::command]
+fn rpc_status(worker: tauri::State<'_, Arc<RpcWorker>>) -> String {
+    worker.status.lock().unwrap().as_str().to_string()
+}
+
+#[tauri::command]
+fn rpc_last_error(worker: tauri::State<'_, Arc<RpcWorker>>) -> Option<String> {
+    worker.last_error.lock().unwrap().clone()
+}
+
+#[tauri::command]
+fn get_user_profile(
+    client_id: String,
+    rate: tauri::State<'_, Mutex<RateState>>,
+) -> Result<rpc::UserProfile, String> {
+    rate_check(&rate, Duration::from_millis(650))?;
+    rpc::get_user_profile_via_handshake(&client_id).map_err(|e| e.to_string())
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+struct AppMeta {
+    name: String,
+    icon_hash: Option<String>,
+    icon_url: Option<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct RpcAppResp {
+    name: String,
+    icon: Option<String>,
+}
+
+#[tauri::command]
+async fn get_app_meta(
+    client_id: String,
+    rate: tauri::State<'_, Mutex<RateState>>,
+) -> Result<AppMeta, String> {
+    rate_check(&rate, Duration::from_millis(650))?;
+
+    let url = format!("https://discord.com/api/v10/oauth2/applications/{}/rpc", client_id);
+
+    let resp = reqwest::Client::new()
+        .get(url)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?
+        .error_for_status()
+        .map_err(|e| e.to_string())?
+        .json::<RpcAppResp>()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let icon_url = resp.icon.as_ref().map(|h| {
+        format!("https://cdn.discordapp.com/app-icons/{}/{}.png?size=256", client_id, h)
+    });
+
+    Ok(AppMeta { name: resp.name, icon_hash: resp.icon, icon_url })
+}
+
+#[tauri::command]
+async fn rpc_enable(
+    cfg: PresenceCfg,
+    rate: tauri::State<'_, Mutex<RateState>>,
+    worker: tauri::State<'_, Arc<RpcWorker>>,
+) -> Result<(), String> {
+    rate_check(&rate, Duration::from_millis(900))?;
+
+    // grava cfg
+    {
+        let mut lock = worker.cfg.lock().unwrap();
+        *lock = Some(cfg.clone());
+    }
+
+    // ✅ define start_ts uma vez (se não tiver)
+    {
+        let mut st = worker.start_ts.lock().unwrap();
+        if st.is_none() {
+            *st = Some(rpc::now_unix_ts());
+        }
+    }
+
+    worker.running.store(true, Ordering::SeqCst);
+
+    if worker.thread_alive.swap(true, Ordering::SeqCst) {
+        return Ok(());
+    }
+
+    let w = worker.inner().clone();
+
+    thread::spawn(move || {
+        let fast_schedule = [
+            Duration::from_secs(0),
+            Duration::from_secs(1),
+            Duration::from_secs(2),
+            Duration::from_secs(4),
+            Duration::from_secs(8),
+        ];
+
+        let keepalive_tick = Duration::from_secs(10); // keepalive
+        set_status(&w, RpcStatus::Connecting);
+        set_error(&w, None);
+
+        let mut client: Option<DiscordRpcClient> = None;
+
+        while w.running.load(Ordering::SeqCst) {
+            let cfg_opt = { w.cfg.lock().unwrap().clone() };
+            let cfg = match cfg_opt {
+                Some(c) => c,
+                None => {
+                    set_status(&w, RpcStatus::Inactive);
+                    break;
+                }
+            };
+
+            // pega start fixo
+            let start_ts = *w.start_ts.lock().unwrap().get_or_insert_with(rpc::now_unix_ts);
+
+            if client.is_none() {
+                set_status(&w, RpcStatus::Connecting);
+
+                match DiscordRpcClient::connect_and_handshake(&cfg.client_id) {
+                    Ok((c, _hs)) => {
+                        client = Some(c);
+                        set_error(&w, None);
+                    }
+                    Err(e) => {
+                        set_status(&w, RpcStatus::Error);
+                        set_error(&w, Some(e.to_string()));
+                        thread::sleep(Duration::from_secs(2));
+                        continue;
+                    }
+                }
+            }
+
+            // burst inicial (não muda start_ts!)
+            {
+                let mut ok_streak = 0u8;
+
+                for d in fast_schedule {
+                    if !w.running.load(Ordering::SeqCst) { break; }
+                    if d.as_secs() > 0 { thread::sleep(d); }
+
+                    let cfg2 = { w.cfg.lock().unwrap().clone() }.unwrap_or_else(|| cfg.clone());
+
+                    let res = match client.as_mut() {
+                        Some(c) => c.set_activity(&cfg2, start_ts),
+                        None => Err(anyhow::anyhow!("client is None")),
+                    };
+
+                    match res {
+                        Ok(_) => {
+                            ok_streak = ok_streak.saturating_add(1);
+                            set_error(&w, None);
+                            if ok_streak >= 2 {
+                                set_status(&w, RpcStatus::Active);
+                                break;
+                            } else {
+                                set_status(&w, RpcStatus::Connecting);
+                            }
+                        }
+                        Err(e) => {
+                            set_status(&w, RpcStatus::Error);
+                            set_error(&w, Some(e.to_string()));
+                            client = None;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if !w.running.load(Ordering::SeqCst) { break; }
+
+            // keepalive sem resetar start_ts
+            thread::sleep(keepalive_tick);
+
+            let cfg3 = { w.cfg.lock().unwrap().clone() }.unwrap_or_else(|| cfg.clone());
+            let res = match client.as_mut() {
+                Some(c) => c.set_activity(&cfg3, start_ts),
+                None => Err(anyhow::anyhow!("client is None")),
+            };
+
+            match res {
+                Ok(_) => {
+                    set_status(&w, RpcStatus::Active);
+                    set_error(&w, None);
+                }
+                Err(e) => {
+                    set_status(&w, RpcStatus::Error);
+                    set_error(&w, Some(e.to_string()));
+                    client = None;
+                    thread::sleep(Duration::from_secs(2));
+                }
+            }
+        }
+
+        if let Some(mut c) = client {
+            let _ = c.clear_activity();
+        }
+
+        // ✅ ao desligar, reseta start_ts para próxima ativação começar do 0
+        *w.start_ts.lock().unwrap() = None;
+
+        set_status(&w, RpcStatus::Inactive);
+        set_error(&w, None);
+        w.thread_alive.store(false, Ordering::SeqCst);
+    });
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn rpc_disable(
+    _client_id: String,
+    rate: tauri::State<'_, Mutex<RateState>>,
+    worker: tauri::State<'_, Arc<RpcWorker>>,
+) -> Result<(), String> {
+    rate_check(&rate, Duration::from_millis(900))?;
+
+    worker.running.store(false, Ordering::SeqCst);
+    Ok(())
+}
+
+fn main() {
+    tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
+        .manage(Mutex::new(RateState::default()))
+        .manage(Arc::new(RpcWorker::default()))
+        .invoke_handler(tauri::generate_handler![
+            rpc_enable,
+            rpc_disable,
+            rpc_status,
+            rpc_last_error,
+            get_user_profile,
+            get_app_meta
+        ])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
+}
