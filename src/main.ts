@@ -212,8 +212,8 @@ function updatePreview() {
 
   el("pvTime").textContent = cfg.with_timestamp ? fmtElapsed(now() - startAt) : "timestamp off";
 
-  const li = cfg.large_image ? cfg.large_image : "—";
-  const si = cfg.small_image ? cfg.small_image : "—";
+  const li = cfg.large_image?.trim() ? (isHttpUrl(cfg.large_image) ? "URL" : cfg.large_image.trim()) : "—";
+  const si = cfg.small_image?.trim() ? (isHttpUrl(cfg.small_image) ? "URL" : cfg.small_image.trim()) : "—";
   el("pvAssets").textContent = `large: ${li} · small: ${si}`;
 
   const b1 = el("pvBtn1") as HTMLAnchorElement;
@@ -256,12 +256,23 @@ function updatePreview() {
     banner.style.backgroundImage = "";
   }
 
-  const avatar = el("pvAvatar");
-  const avatarFinal = avatarSrc || cachedUserAvatarUrl || cachedAppIconUrl;
-  avatar.style.backgroundImage = avatarFinal ? `url("${avatarFinal}")` : "";
+  const avatar = el("pvAvatar"); 
+  // se o usuário passou URL no large/small image do RP, usamos como fallback
+  const presenceImgUrl = pickPresenceImageUrl(cfg);
+
+  const avatarFinal =
+  avatarSrc ||
+  cachedUserAvatarUrl ||
+  cachedAppIconUrl ||
+  presenceImgUrl;
+
+  avatar.style.backgroundImage = avatarFinal
+  ? `url("${avatarFinal}")`
+  : "";
 
   const art = el("pvArt");
-  const artFinal = cardSrc || cachedAppIconUrl || avatarFinal;
+  const c = presenceImgUrl ? presenceImgUrl : cachedAppIconUrl
+  const artFinal = c || cardSrc || avatarFinal;
   art.style.backgroundImage = artFinal ? `url("${artFinal}")` : "";
 }
 
@@ -564,6 +575,22 @@ function bindLivePreviewAndSave() {
     const ts = (document.getElementById("ts") as HTMLInputElement).checked;
     if (ts) updatePreview();
   }, 500);
+}
+
+function isHttpUrl(v: string | null | undefined): boolean {
+  if (!v) return false;
+  return /^https?:\/\//i.test(v.trim());
+}
+
+function pickPresenceImageUrl(cfg: PresenceCfg): string | null {
+  const li = (cfg.large_image ?? "").trim();
+  const si = (cfg.small_image ?? "").trim();
+
+  // Prefer large image URL, then small
+  if (isHttpUrl(li)) return li;
+  if (isHttpUrl(si)) return si;
+
+  return null;
 }
 
 function bindButtons() {
