@@ -220,27 +220,53 @@
           </div>
 
           <!-- Activity preview -->
-          <div class="discordActivityCard">
-            <div class="activityHeader">
-              <span class="pill">Jogando</span>
-              <span class="muted" id="pvAppName">App</span>
+          <section class="dc-preview">
+            <div class="dc-preview-top">
+              <div class="dc-preview-title">Preview</div>
+              <div class="dc-preview-sub">Discord-like activity card</div>
             </div>
 
-            <div class="activityBody">
-              <div class="activityArt" id="pvArt"></div>
-              <div class="activityText">
-                <div class="line strong" id="pvDetails">—</div>
-                <div class="line" id="pvState">—</div>
-                <div class="line muted" id="pvTime">timestamp off</div>
-                <div class="line muted" id="pvAssets">large: — · small: —</div>
+            <div class="dc-activity">
+              <div class="dc-activity-label">Atividade atual</div>
+
+              <div class="dc-card">
+                <div class="dc-card-header">
+                  <div class="dc-card-header-left">
+                    <div class="dc-pill">Jogando</div>
+                  </div>
+                  <div class="dc-card-header-right">⋯</div>
+                </div>
+
+                <div class="dc-card-body">
+                  <div class="dc-media">
+                    <div id="pvLargeArt" class="dc-large-art"></div>
+                    <div id="pvSmallBadge" class="dc-small-badge"></div>
+                  </div>
+
+                  <div class="dc-info">
+                    <div id="pvAppName" class="dc-appname">App</div>
+                    <div id="pvDetails" class="dc-details">—</div>
+                    <div id="pvState" class="dc-state">—</div>
+
+                    <div class="dc-meta">
+                      <span class="dc-controller" aria-hidden="true"></span>
+                      <span id="pvTime" class="dc-time">timestamp off</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="dc-buttons">
+                  <a id="pvBtn1" class="dc-btn" href="#" target="_blank" rel="noreferrer">Button 1</a>
+                  <a id="pvBtn2" class="dc-btn" href="#" target="_blank" rel="noreferrer">Button 2</a>
+                </div>
               </div>
             </div>
 
-            <div class="btnRow">
-              <a class="discordBtn" id="pvBtn1" href="#" target="_blank" rel="noreferrer">Botão 1</a>
-              <a class="discordBtn" id="pvBtn2" href="#" target="_blank" rel="noreferrer">Botão 2</a>
+            <div class="dc-note">
+              Preview é visual. O Discord real pode variar (tema, fonte, espaçamento).
             </div>
-          </div>
+          </section>
+
 
           <div class="note">
             <div class="noteTitle">Observação</div>
