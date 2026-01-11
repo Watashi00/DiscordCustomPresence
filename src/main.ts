@@ -212,9 +212,11 @@ function updatePreview() {
 
   el("pvTime").textContent = cfg.with_timestamp ? fmtElapsed(now() - startAt) : "timestamp off";
 
-  const li = cfg.large_image?.trim() ? (isHttpUrl(cfg.large_image) ? "URL" : cfg.large_image.trim()) : "—";
-  const si = cfg.small_image?.trim() ? (isHttpUrl(cfg.small_image) ? "URL" : cfg.small_image.trim()) : "—";
-  el("pvAssets").textContent = `large: ${li} · small: ${si}`;
+  const largeUrl = isHttpUrl(cfg.large_image) ? cfg.large_image!.trim() : null;
+  const smallUrl = isHttpUrl(cfg.small_image) ? cfg.small_image!.trim() : null;
+
+  // depreciad
+  //el("pvAssets").textContent = `large: ${li} · small: ${si}`;
 
   const b1 = el("pvBtn1") as HTMLAnchorElement;
   const b2 = el("pvBtn2") as HTMLAnchorElement;
@@ -259,6 +261,21 @@ function updatePreview() {
   const avatar = el("pvAvatar"); 
   // se o usuário passou URL no large/small image do RP, usamos como fallback
   const presenceImgUrl = pickPresenceImageUrl(cfg);
+
+  // Large art (main square)
+  const large = document.getElementById("pvLargeArt") as HTMLElement;
+  const largeFinal = largeUrl || normalizeImgSrc($("pvCardImgSrc").value) || cachedAppIconUrl || cachedUserAvatarUrl || "";
+  large.style.backgroundImage = largeFinal ? `url("${largeFinal}")` : "";
+
+  // Small badge (overlay)
+  const badge = document.getElementById("pvSmallBadge") as HTMLElement;
+  if (smallUrl) {
+    badge.style.display = "block";
+    badge.style.backgroundImage = `url("${smallUrl}")`;
+  } else {
+    badge.style.display = "none";
+    badge.style.backgroundImage = "";
+  }
 
   const avatarFinal =
   avatarSrc ||

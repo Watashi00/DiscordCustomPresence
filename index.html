@@ -9,206 +9,243 @@
   </head>
 
   <body>
-    <main class="app">
+    <main class="shell">
       <!-- LEFT: editor -->
-      <section class="panel editor">
-        <header class="header">
-          <div class="headLeft">
-            <div class="titleRow">
-              <div class="appMark"></div>
-              <div>
-                <h1>Custom Rich Presence</h1>
-                <p class="subtitle">Discord · Linux</p>
-              </div>
-            </div>
-
-            <div class="statusRow">
-              <span class="badge" id="uiStatus">Pronto</span>
-              <span class="muted" id="uiHint">Sem ações pendentes</span>
+      <section class="pane editor">
+        <header class="topbar">
+          <div class="brand">
+            <div class="mark"></div>
+            <div class="brandText">
+              <div class="brandTitle">Custom Rich Presence</div>
+              <div class="brandSub">Discord · Linux</div>
             </div>
           </div>
 
-          <div class="headerActions">
-            <button id="updateBtn" class="btn">Atualizar agora</button>
-            <button id="toggleBtn" class="btn primary">Ativar</button>
+          <div class="topbarRight">
+            <div class="status">
+              <span class="pillStatus" id="uiStatus">Pronto</span>
+              <span class="statusHint" id="uiHint">Sem ações pendentes</span>
+            </div>
+
+            <div class="actions">
+              <!-- Help button (placeholder link for future docs) -->
+              <a id="helpBtn" class="btn ghost" href="https://github.com/Watashi00/DiscordCustomPresence#readme" target="_blank" rel="noreferrer">
+                Ajuda
+              </a>
+
+              <button id="updateBtn" class="btn ghost">Atualizar agora</button>
+              <button id="toggleBtn" class="btn primary">Ativar</button>
+            </div>
           </div>
         </header>
 
-        <div class="content" id="leftScroll">
-          <!-- Client -->
-          <div class="card">
-            <div class="cardTop">
-              <div class="cardTitle">Conexão</div>
-              <div class="cardActions">
+        <div class="scroll">
+          <!-- Connection -->
+          <section class="section">
+            <div class="sectionHead">
+              <div>
+                <div class="sectionTitle">Conexão</div>
+                <div class="sectionSub">Defina o Client ID e sincronize dados (opcional).</div>
+              </div>
+              <div class="sectionActions">
                 <button id="syncUserBtn" class="btn ghost">Sync usuário</button>
                 <button id="syncAppBtn" class="btn ghost">Sync app icon</button>
               </div>
             </div>
 
-            <label>
-              Client ID (Application ID)
-              <input id="clientId" placeholder="ex: 123456789987654321" inputmode="numeric" />
-            </label>
-
-            <div class="twoCols">
-              <div class="hintBox">
-                <div class="hintTitle">O que “Sync usuário” pega?</div>
-                <div class="hintText">Username + avatar da sua conta via IPC handshake (Discord Desktop).</div>
-              </div>
-              <div class="hintBox">
-                <div class="hintTitle">O que “Sync app icon” pega?</div>
-                <div class="hintText">Nome + ícone do app via endpoint RPC público do Discord (por client_id).</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- RP Text -->
-          <div class="card">
-            <div class="cardTitle">Texto do Rich Presence</div>
-            <div class="grid2">
-              <label>
-                Details
-                <input id="details" placeholder="ex: Ticket" />
+            <div class="card">
+              <label class="field">
+                <span class="label">Client ID (Application ID)</span>
+                <input id="clientId" placeholder="ex: 123456789987654321" inputmode="numeric" />
               </label>
 
-              <label>
-                State
-                <input id="state" placeholder="ex: Teste" />
-              </label>
+              <div class="hintGrid">
+                <div class="hint">
+                  <div class="hintTitle">Sync usuário</div>
+                  <div class="hintText">Username + avatar via IPC handshake (Discord Desktop).</div>
+                </div>
+                <div class="hint">
+                  <div class="hintTitle">Sync app icon</div>
+                  <div class="hintText">Nome + ícone do app via endpoint RPC público (por client_id).</div>
+                </div>
+              </div>
             </div>
+          </section>
 
-            <div class="optionsRow">
-              <label class="checkbox">
+          <!-- Activity text -->
+          <section class="section">
+            <div class="sectionHead">
+              <div>
+                <div class="sectionTitle">Atividade</div>
+                <div class="sectionSub">O que aparece no card do Discord.</div>
+              </div>
+              <label class="toggle">
                 <input type="checkbox" id="ts" checked />
-                Timestamp (start now)
+                <span>Timestamp (start now)</span>
               </label>
             </div>
-          </div>
 
-          <!-- Assets (Discord real) -->
-          <div class="card">
-            <div class="cardTitle">Assets do Discord (keys do Developer Portal)</div>
-            <div class="hintText">
-              Dica: se você deixar vazio, o Discord pode usar o <b>App Icon</b> como fallback (como você viu no card “Ticket”).
+            <div class="card">
+              <div class="grid2">
+                <label class="field">
+                  <span class="label">Details</span>
+                  <input id="details" placeholder="ex: in development" />
+                </label>
+
+                <label class="field">
+                  <span class="label">State</span>
+                  <input id="state" placeholder="ex: custom rich presence using Rust" />
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <!-- Discord assets -->
+          <section class="section">
+            <div class="sectionHead">
+              <div>
+                <div class="sectionTitle">Assets</div>
+                <div class="sectionSub">Keys do Developer Portal ou URLs (quando suportado pelo client).</div>
+              </div>
             </div>
 
-            <div class="grid2">
-              <label>
-                Large Image Key
-                <input id="largeImage" placeholder="ex: avatar" />
-              </label>
+            <div class="card">
+              <div class="noteInline">
+                Dica: se deixar vazio, o Discord pode usar o <b>App Icon</b> como fallback.
+              </div>
 
-              <label>
-                Large Text
-                <input id="largeText" placeholder="ex: Linux CustomRP" />
-              </label>
+              <div class="grid2">
+                <label class="field">
+                  <span class="label">Large Image (key / URL)</span>
+                  <input id="largeImage" placeholder="ex: avatar ou https://..." />
+                </label>
 
-              <label>
-                Small Image Key
-                <input id="smallImage" placeholder="ex: small" />
-              </label>
+                <label class="field">
+                  <span class="label">Large Text</span>
+                  <input id="largeText" placeholder="ex: Linux CustomRP" />
+                </label>
 
-              <label>
-                Small Text
-                <input id="smallText" placeholder="ex: rodando local" />
-              </label>
+                <label class="field">
+                  <span class="label">Small Image (key / URL)</span>
+                  <input id="smallImage" placeholder="ex: small ou https://..." />
+                </label>
+
+                <label class="field">
+                  <span class="label">Small Text</span>
+                  <input id="smallText" placeholder="ex: rodando local" />
+                </label>
+              </div>
             </div>
-          </div>
+          </section>
 
           <!-- Buttons -->
-          <div class="card">
-            <div class="cardTitle">Botões</div>
-            <div class="grid2">
-              <label>
-                Botão 1 – Label
-                <input id="b1label" placeholder="ex: GitHub" />
-              </label>
-              <label>
-                Botão 1 – URL
-                <input id="b1url" placeholder="https://github.com/" />
-              </label>
-
-              <label>
-                Botão 2 – Label
-                <input id="b2label" placeholder="ex: Site" />
-              </label>
-              <label>
-                Botão 2 – URL
-                <input id="b2url" placeholder="https://example.com" />
-              </label>
-            </div>
-          </div>
-
-          <!-- Preview media inputs (local/URL) -->
-          <div class="card">
-            <div class="cardTop">
-              <div class="cardTitle">Imagens do Preview (URL ou Path local)</div>
-              <div class="cardActions">
-                <button id="pickAvatarBtn" class="btn ghost">Escolher avatar</button>
-                <button id="pickBannerBtn" class="btn ghost">Escolher banner</button>
-                <button id="pickCardBtn" class="btn ghost">Escolher imagem do card</button>
+          <section class="section">
+            <div class="sectionHead">
+              <div>
+                <div class="sectionTitle">Botões</div>
+                <div class="sectionSub">Links do card do Discord (quando suportado).</div>
               </div>
             </div>
 
-            <div class="grid2">
-              <label>
-                Preview Avatar (URL/path)
-                <input id="pvAvatarSrc" placeholder="https://... ou /home/user/..." />
-              </label>
+            <div class="card">
+              <div class="grid2">
+                <label class="field">
+                  <span class="label">Botão 1 — Label</span>
+                  <input id="b1label" placeholder="ex: OpenSource" />
+                </label>
 
-              <label>
-                Preview Banner (URL/path)
-                <input id="pvBannerSrc" placeholder="https://... ou /home/user/..." />
-              </label>
+                <label class="field">
+                  <span class="label">Botão 1 — URL</span>
+                  <input id="b1url" placeholder="https://github.com/..." />
+                </label>
 
-              <label>
-                Preview Card Image (URL/path)
-                <input id="pvCardImgSrc" placeholder="https://... ou /home/user/..." />
-              </label>
+                <label class="field">
+                  <span class="label">Botão 2 — Label</span>
+                  <input id="b2label" placeholder="ex: TocaOculta" />
+                </label>
 
-              <label>
-                Preview Nome exibido
-                <input id="pvDisplayName" placeholder="(auto via Sync usuário/app) ou digite manual" />
-              </label>
+                <label class="field">
+                  <span class="label">Botão 2 — URL</span>
+                  <input id="b2url" placeholder="https://discord.gg/..." />
+                </label>
+              </div>
+            </div>
+          </section>
 
-              <label>
-                Preview @handle
-                <input id="pvHandle" placeholder="@seu_handle (opcional)" />
-              </label>
+          <!-- Preview media (local/URL) -->
+          <section class="section">
+            <div class="sectionHead">
+              <div>
+                <div class="sectionTitle">Preview (imagens opcionais)</div>
+                <div class="sectionSub">Apenas para simulação visual (não altera o Discord real).</div>
+              </div>
 
-              <label>
-                Preview Status
-                <input id="pvPresenceLine" placeholder="Online / Ausente / Ocupado (visual apenas)" />
-              </label>
+              <div class="sectionActions">
+                <button id="pickAvatarBtn" class="btn ghost">Avatar</button>
+                <button id="pickBannerBtn" class="btn ghost">Banner</button>
+                <button id="pickCardBtn" class="btn ghost">Card</button>
+              </div>
             </div>
 
-            <div class="hintText">
-              Essas imagens são só para <b>preview</b>. O Discord RP real usa <b>asset keys</b>.
-            </div>
-          </div>
+            <div class="card">
+              <div class="grid2">
+                <label class="field">
+                  <span class="label">Preview Avatar (URL/path)</span>
+                  <input id="pvAvatarSrc" placeholder="https://... ou /home/user/..." />
+                </label>
 
-          <footer class="footer">
-            <small>
-              Apply/Remove tem rate-limit (UI + backend). Se clicar rápido demais, ele segura para não travar.
-            </small>
+                <label class="field">
+                  <span class="label">Preview Banner (URL/path)</span>
+                  <input id="pvBannerSrc" placeholder="https://... ou /home/user/..." />
+                </label>
+
+                <label class="field">
+                  <span class="label">Preview Card Image (URL/path)</span>
+                  <input id="pvCardImgSrc" placeholder="https://... ou /home/user/..." />
+                </label>
+
+                <label class="field">
+                  <span class="label">Preview Nome exibido</span>
+                  <input id="pvDisplayName" placeholder="auto via Sync ou digite manual" />
+                </label>
+
+                <label class="field">
+                  <span class="label">Preview @handle</span>
+                  <input id="pvHandle" placeholder="@wa_tashinho" />
+                </label>
+
+                <label class="field">
+                  <span class="label">Preview Status</span>
+                  <input id="pvPresenceLine" placeholder="online / ausente / ocupado (visual)" />
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <footer class="foot">
+            <div class="footText">
+              Dica: “Atualizar agora” aplica alterações no RP ativo sem reiniciar a sessão.
+            </div>
           </footer>
         </div>
       </section>
 
       <!-- RIGHT: preview -->
-      <section class="panel preview">
-        <header class="previewHeader">
-          <div class="previewTitle">Preview</div>
-          <div class="previewHint">simulação do card do Discord</div>
+      <section class="pane preview">
+        <header class="topbar previewTop">
+          <div class="brandText">
+            <div class="brandTitle">Preview</div>
+            <div class="brandSub">simulação do card do Discord</div>
+          </div>
         </header>
 
-        <div class="previewWrap">
-          <!-- Profile preview -->
-          <div class="profileCard">
-            <div class="banner" id="pvBanner"></div>
-            <div class="profileTop">
+        <div class="scroll previewScroll">
+          <!-- Profile -->
+          <div class="profile">
+            <div class="profileBanner" id="pvBanner"></div>
+            <div class="profileRow">
               <div class="profileAvatar" id="pvAvatar"></div>
-              <div class="profileInfo">
+              <div class="profileMeta">
                 <div class="profileName" id="pvNameText">Você</div>
                 <div class="profileSub">
                   <span id="pvHandleText">@handle</span>
@@ -219,59 +256,44 @@
             </div>
           </div>
 
-          <!-- Activity preview -->
-          <section class="dc-preview">
-            <div class="dc-preview-top">
-              <div class="dc-preview-title">Preview</div>
-              <div class="dc-preview-sub">Discord-like activity card</div>
-            </div>
+          <!-- Discord-like activity card -->
+          <div class="activityBlock">
+            <div class="activityLabel">Atividade atual</div>
 
-            <div class="dc-activity">
-              <div class="dc-activity-label">Atividade atual</div>
+            <div class="dcCard">
+              <div class="dcHead">
+                <span class="dcPill">Jogando</span>
+                <span class="dcMore">⋯</span>
+              </div>
 
-              <div class="dc-card">
-                <div class="dc-card-header">
-                  <div class="dc-card-header-left">
-                    <div class="dc-pill">Jogando</div>
-                  </div>
-                  <div class="dc-card-header-right">⋯</div>
+              <div class="dcBody">
+                <div class="dcMedia">
+                  <div id="pvLargeArt" class="dcLarge"></div>
+                  <div id="pvSmallBadge" class="dcSmall"></div>
                 </div>
 
-                <div class="dc-card-body">
-                  <div class="dc-media">
-                    <div id="pvLargeArt" class="dc-large-art"></div>
-                    <div id="pvSmallBadge" class="dc-small-badge"></div>
+                <div class="dcText">
+                  <div id="pvAppName" class="dcApp">App</div>
+                  <div id="pvDetails" class="dcDetails">—</div>
+                  <div id="pvState" class="dcState">—</div>
+
+                  <div class="dcMeta">
+                    <span class="dcController"></span>
+                    <span id="pvTime">timestamp off</span>
                   </div>
 
-                  <div class="dc-info">
-                    <div id="pvAppName" class="dc-appname">App</div>
-                    <div id="pvDetails" class="dc-details">—</div>
-                    <div id="pvState" class="dc-state">—</div>
-
-                    <div class="dc-meta">
-                      <span class="dc-controller" aria-hidden="true"></span>
-                      <span id="pvTime" class="dc-time">timestamp off</span>
-                    </div>
-                  </div>
+                  <div class="dcAssets" id="pvAssets">large: — · small: —</div>
                 </div>
+              </div>
 
-                <div class="dc-buttons">
-                  <a id="pvBtn1" class="dc-btn" href="#" target="_blank" rel="noreferrer">Button 1</a>
-                  <a id="pvBtn2" class="dc-btn" href="#" target="_blank" rel="noreferrer">Button 2</a>
-                </div>
+              <div class="dcBtns">
+                <a id="pvBtn1" class="dcBtn" href="#" target="_blank" rel="noreferrer">OpenSource</a>
+                <a id="pvBtn2" class="dcBtn" href="#" target="_blank" rel="noreferrer">TocaOculta</a>
               </div>
             </div>
 
-            <div class="dc-note">
+            <div class="previewNote">
               Preview é visual. O Discord real pode variar (tema, fonte, espaçamento).
-            </div>
-          </section>
-
-
-          <div class="note">
-            <div class="noteTitle">Observação</div>
-            <div class="noteText">
-              Preview é visual. O Discord real pode variar levemente (tema, fonte, espaçamentos). O ícone do app aparece como fallback quando assets não são definidos.
             </div>
           </div>
         </div>
