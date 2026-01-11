@@ -1,0 +1,423 @@
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+:root{
+  /* Discord-ish dark */
+  --bg: #0b0d13;
+  --panel: #0f111a;
+  --card: #151826;
+  --card2: #121526;
+  --border: rgba(88, 101, 242, 0.18);
+
+  --text: #e7ecff;
+  --muted: #9aa4bf;
+
+  --blurple: #5865F2;
+  --blurple2: #4752C4;
+
+  --danger: #ed4245;
+  --danger2: #c93b3e;
+
+  --ok: #3ba55c;
+
+  --r14: 14px;
+  --r12: 12px;
+  --r10: 10px;
+  --r8: 8px;
+
+  --shadow: 0 14px 50px rgba(0,0,0,.50);
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, sans-serif;
+}
+
+html,body{
+  margin:0;
+  height:100%;
+  background:
+    radial-gradient(900px 450px at 25% -10%, rgba(88,101,242,.18) 0%, transparent 60%),
+    radial-gradient(800px 380px at 70% 0%, rgba(59,165,92,.10) 0%, transparent 60%),
+    var(--bg);
+  color:var(--text);
+  font-family:var(--font);
+}
+
+.app{
+  height:100vh;
+  display:grid;
+  grid-template-columns: 1.25fr 0.95fr;
+  gap:14px;
+  padding:14px;
+  min-width: 940px; /* garante 2 colunas visíveis */
+}
+
+.panel{
+  background: linear-gradient(180deg, rgba(15,17,26,.98) 0%, rgba(12,14,22,.98) 100%);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: var(--r14);
+  box-shadow: var(--shadow);
+  overflow:hidden;
+  min-height:0;
+}
+
+/* Header */
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+  padding:14px 14px 10px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  background: linear-gradient(180deg, rgba(21,24,38,.72) 0%, rgba(21,24,38,.25) 100%);
+}
+
+.titleRow{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+.appMark{
+  width:14px;height:14px;border-radius:4px;
+  background: linear-gradient(180deg, var(--blurple) 0%, var(--blurple2) 100%);
+  box-shadow: 0 0 0 1px rgba(88,101,242,.25);
+}
+h1{
+  margin:0;
+  font-size:18px;
+  font-weight:800;
+  letter-spacing:.2px;
+}
+.subtitle{
+  margin:5px 0 0;
+  font-size:12px;
+  color:var(--muted);
+}
+
+.statusRow{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-top:10px;
+}
+.badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:800;
+  background: rgba(88,101,242,.15);
+  border: 1px solid rgba(88,101,242,.25);
+  color:#cfd6ff;
+}
+.muted{ color:var(--muted); font-size:11px; }
+
+.headerActions{ display:flex; gap:10px; }
+
+/* Scroll */
+.editor .content{
+  height: calc(100vh - 74px);
+  overflow:auto;
+  padding:12px;
+}
+
+/* Cards */
+.card{
+  background: linear-gradient(180deg, rgba(21,24,38,.90) 0%, rgba(18,21,38,.92) 100%);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: var(--r14);
+  padding:12px;
+  margin-bottom:12px;
+}
+
+.cardTop{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+}
+.cardActions{ display:flex; gap:8px; flex-wrap: wrap; }
+.cardTitle{
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.2px;
+  color:#dbe2ff;
+}
+
+.twoCols{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:10px;
+  margin-top:10px;
+}
+.hintBox{
+  background: rgba(0,0,0,.18);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: var(--r12);
+  padding:10px;
+}
+.hintTitle{
+  font-size:11px;
+  font-weight:900;
+  color:#dbe2ff;
+  margin-bottom:4px;
+}
+.hintText{
+  font-size:11px;
+  color:var(--muted);
+  line-height:1.35rem;
+}
+
+/* Form */
+label{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  font-size:11px;
+  color:var(--muted);
+}
+
+input{
+  width:100%;
+  background: rgba(0,0,0,.22);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius: var(--r12);
+  padding:10px 12px;
+  color:var(--text);
+  font-size:12px;
+  outline:none;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+input::placeholder{ color: rgba(154,164,191,.55); }
+
+input:focus{
+  border-color: rgba(88,101,242,.55);
+  box-shadow: 0 0 0 2px rgba(88,101,242,.18);
+}
+
+.grid2{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:10px 12px;
+}
+
+.optionsRow{ margin-top:10px; }
+.checkbox{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  cursor:pointer;
+  color:var(--text);
+  font-size:12px;
+}
+.checkbox input{
+  width:16px;height:16px;
+  accent-color: var(--blurple);
+}
+
+/* Buttons */
+.btn{
+  border:none;
+  border-radius: 999px;
+  padding:9px 14px;
+  font-size:12px;
+  font-weight:900;
+  cursor:pointer;
+  transition: transform .06s, filter .15s, opacity .15s;
+  user-select:none;
+}
+.btn:active{ transform: translateY(1px); }
+.btn.primary{
+  background: linear-gradient(180deg, var(--blurple) 0%, var(--blurple2) 100%);
+  color: #0b0d13;
+}
+.btn.danger{
+  background: linear-gradient(180deg, var(--danger) 0%, var(--danger2) 100%);
+  color: #160b0b;
+}
+.btn.ghost{
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.08);
+  color: #dbe2ff;
+  padding:8px 12px;
+}
+.btn:hover{ filter: brightness(1.06); }
+.btn:disabled{
+  opacity:.55;
+  cursor:not-allowed;
+}
+
+/* Preview side */
+.previewHeader{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  padding:14px 14px 10px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  background: linear-gradient(180deg, rgba(21,24,38,.72) 0%, rgba(21,24,38,.25) 100%);
+}
+.previewTitle{ font-size:13px; font-weight:900; }
+.previewHint{ font-size:11px; color:var(--muted); }
+
+.previewWrap{
+  height: calc(100vh - 58px);
+  overflow:auto;
+  padding:12px;
+}
+
+/* Profile preview */
+.profileCard{
+  background: rgba(0,0,0,.18);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius: var(--r14);
+  overflow:hidden;
+}
+
+.banner{
+  height:110px;
+  background:
+    radial-gradient(700px 280px at 20% 10%, rgba(88,101,242,.25) 0%, transparent 60%),
+    rgba(255,255,255,.03);
+}
+
+.profileTop{
+  display:flex;
+  gap:12px;
+  padding:12px;
+  margin-top:-22px;
+  align-items:center;
+}
+
+.profileAvatar{
+  width:56px;height:56px;
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(88,101,242,.35) 0%, rgba(255,255,255,.06) 55%, rgba(0,0,0,.25) 100%);
+  border: 2px solid rgba(15,17,26,.95);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.10);
+  background-size: cover;
+  background-position: center;
+}
+
+.profileInfo{ min-width: 0; }
+.profileName{
+  font-size:14px;
+  font-weight:900;
+  letter-spacing:.2px;
+}
+.profileSub{
+  margin-top:4px;
+  font-size:11px;
+  color:var(--muted);
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+.dot{ opacity:.6; }
+
+/* Activity preview card */
+.discordActivityCard{
+  margin-top:12px;
+  background: rgba(0,0,0,.18);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius: var(--r14);
+  padding:12px;
+}
+
+.activityHeader{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:10px;
+}
+.pill{
+  font-size:10px;
+  font-weight:900;
+  color:#dbe2ff;
+  background: rgba(88,101,242,.16);
+  border:1px solid rgba(88,101,242,.22);
+  padding:4px 10px;
+  border-radius:999px;
+}
+
+.activityBody{
+  display:grid;
+  grid-template-columns: 62px 1fr;
+  gap:12px;
+  align-items:start;
+}
+
+.activityArt{
+  width:62px;height:62px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+  background-size: cover;
+  background-position: center;
+}
+
+.activityText .line{
+  font-size:12px;
+  line-height:1.35rem;
+}
+.activityText .strong{
+  font-size:13px;
+  font-weight:900;
+}
+.activityText .muted{
+  color: var(--muted);
+  font-size:11px;
+}
+
+.btnRow{
+  display:flex;
+  gap:10px;
+  margin-top:12px;
+}
+.discordBtn{
+  flex:1;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  text-decoration:none;
+  padding:9px 12px;
+  border-radius: var(--r12);
+  background: rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.08);
+  color:#dbe2ff;
+  font-size:12px;
+  font-weight:900;
+}
+.discordBtn:hover{ filter: brightness(1.06); }
+
+.note{
+  margin-top:12px;
+  background: rgba(0,0,0,.14);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius: var(--r14);
+  padding:12px;
+}
+.noteTitle{
+  font-size:11px;
+  font-weight:900;
+  color:#dbe2ff;
+  margin-bottom:6px;
+}
+.noteText{
+  font-size:11px;
+  color:var(--muted);
+  line-height:1.35rem;
+}
+
+.footer{
+  margin-top:6px;
+  text-align:center;
+  color:var(--muted);
+  font-size:11px;
+}
+
+/* Não empilhar automaticamente — você quer as 2 colunas sempre.
+   Se quiser empilhar em telas MUITO pequenas, use @media max-width: 720px e remova min-width do .app. */
