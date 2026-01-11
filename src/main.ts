@@ -160,6 +160,7 @@ function setBusy(disabled: boolean) {
   const toggle = el("toggleBtn") as HTMLButtonElement | null;
   if (toggle) toggle.disabled = disabled;
 
+  (el("updateBtn") as HTMLButtonElement).disabled = disabled;
   (el("syncUserBtn") as HTMLButtonElement).disabled = disabled;
   (el("syncAppBtn") as HTMLButtonElement).disabled = disabled;
   (el("pickAvatarBtn") as HTMLButtonElement).disabled = disabled;
@@ -180,6 +181,28 @@ function renderToggle() {
     btn.classList.add("primary");
   }
 }
+
+async function updateNow() {
+  const cfg = getCfg();
+  if (!cfg.client_id) {
+    setStatus("warn", "Client ID", "Client ID é obrigatório.");
+    return;
+  }
+
+  setBusy(true);
+  setStatus("busy", "Atualizando", "Aplicando alterações no Rich Presence ativo...");
+
+  try {
+    await invoke("rpc_update", { cfg });
+    setStatus("ok", "Atualizado", "Alterações aplicadas.");
+    saveNow();
+  } catch (e: any) {
+    setStatus("warn", "Erro", String(e));
+  } finally {
+    setBusy(false);
+  }
+}
+
 
 function updatePreview() {
   const cfg = getCfg();
@@ -557,7 +580,7 @@ function bindButtons() {
       await enableRpc();
     }
   });
-
+  el("updateBtn")?.addEventListener("click", updateNow);
   el("syncUserBtn")?.addEventListener("click", syncUserProfile);
   el("syncAppBtn")?.addEventListener("click", syncAppMeta);
 
