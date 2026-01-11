@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CustomRP Linux</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+
+  <body>
+    <main class="app">
+      <!-- LEFT: editor -->
+      <section class="panel editor">
+        <header class="header">
+          <div class="headLeft">
+            <div class="titleRow">
+              <div class="appMark"></div>
+              <div>
+                <h1>Custom Rich Presence</h1>
+                <p class="subtitle">Discord · Linux</p>
+              </div>
+            </div>
+
+            <div class="statusRow">
+              <span class="badge" id="uiStatus">Pronto</span>
+              <span class="muted" id="uiHint">Sem ações pendentes</span>
+            </div>
+          </div>
+
+          <div class="headerActions">
+            <button id="toggleBtn" class="btn primary">Ativar</button>
+          </div>
+        </header>
+
+        <div class="content" id="leftScroll">
+          <!-- Client -->
+          <div class="card">
+            <div class="cardTop">
+              <div class="cardTitle">Conexão</div>
+              <div class="cardActions">
+                <button id="syncUserBtn" class="btn ghost">Sync usuário</button>
+                <button id="syncAppBtn" class="btn ghost">Sync app icon</button>
+              </div>
+            </div>
+
+            <label>
+              Client ID (Application ID)
+              <input id="clientId" placeholder="ex: 1456823157745782817" inputmode="numeric" />
+            </label>
+
+            <div class="twoCols">
+              <div class="hintBox">
+                <div class="hintTitle">O que “Sync usuário” pega?</div>
+                <div class="hintText">Username + avatar da sua conta via IPC handshake (Discord Desktop).</div>
+              </div>
+              <div class="hintBox">
+                <div class="hintTitle">O que “Sync app icon” pega?</div>
+                <div class="hintText">Nome + ícone do app via endpoint RPC público do Discord (por client_id).</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RP Text -->
+          <div class="card">
+            <div class="cardTitle">Texto do Rich Presence</div>
+            <div class="grid2">
+              <label>
+                Details
+                <input id="details" placeholder="ex: Ticket" />
+              </label>
+
+              <label>
+                State
+                <input id="state" placeholder="ex: Teste" />
+              </label>
+            </div>
+
+            <div class="optionsRow">
+              <label class="checkbox">
+                <input type="checkbox" id="ts" checked />
+                Timestamp (start now)
+              </label>
+            </div>
+          </div>
+
+          <!-- Assets (Discord real) -->
+          <div class="card">
+            <div class="cardTitle">Assets do Discord (keys do Developer Portal)</div>
+            <div class="hintText">
+              Dica: se você deixar vazio, o Discord pode usar o <b>App Icon</b> como fallback (como você viu no card “Ticket”).
+            </div>
+
+            <div class="grid2">
+              <label>
+                Large Image Key
+                <input id="largeImage" placeholder="ex: avatar" />
+              </label>
+
+              <label>
+                Large Text
+                <input id="largeText" placeholder="ex: Linux CustomRP" />
+              </label>
+
+              <label>
+                Small Image Key
+                <input id="smallImage" placeholder="ex: small" />
+              </label>
+
+              <label>
+                Small Text
+                <input id="smallText" placeholder="ex: rodando local" />
+              </label>
+            </div>
+          </div>
+
+          <!-- Buttons -->
+          <div class="card">
+            <div class="cardTitle">Botões</div>
+            <div class="grid2">
+              <label>
+                Botão 1 – Label
+                <input id="b1label" placeholder="ex: GitHub" />
+              </label>
+              <label>
+                Botão 1 – URL
+                <input id="b1url" placeholder="https://github.com/" />
+              </label>
+
+              <label>
+                Botão 2 – Label
+                <input id="b2label" placeholder="ex: Site" />
+              </label>
+              <label>
+                Botão 2 – URL
+                <input id="b2url" placeholder="https://example.com" />
+              </label>
+            </div>
+          </div>
+
+          <!-- Preview media inputs (local/URL) -->
+          <div class="card">
+            <div class="cardTop">
+              <div class="cardTitle">Imagens do Preview (URL ou Path local)</div>
+              <div class="cardActions">
+                <button id="pickAvatarBtn" class="btn ghost">Escolher avatar</button>
+                <button id="pickBannerBtn" class="btn ghost">Escolher banner</button>
+                <button id="pickCardBtn" class="btn ghost">Escolher imagem do card</button>
+              </div>
+            </div>
+
+            <div class="grid2">
+              <label>
+                Preview Avatar (URL/path)
+                <input id="pvAvatarSrc" placeholder="https://... ou /home/user/..." />
+              </label>
+
+              <label>
+                Preview Banner (URL/path)
+                <input id="pvBannerSrc" placeholder="https://... ou /home/user/..." />
+              </label>
+
+              <label>
+                Preview Card Image (URL/path)
+                <input id="pvCardImgSrc" placeholder="https://... ou /home/user/..." />
+              </label>
+
+              <label>
+                Preview Nome exibido
+                <input id="pvDisplayName" placeholder="(auto via Sync usuário/app) ou digite manual" />
+              </label>
+
+              <label>
+                Preview @handle
+                <input id="pvHandle" placeholder="@seu_handle (opcional)" />
+              </label>
+
+              <label>
+                Preview Status
+                <input id="pvPresenceLine" placeholder="Online / Ausente / Ocupado (visual apenas)" />
+              </label>
+            </div>
+
+            <div class="hintText">
+              Essas imagens são só para <b>preview</b>. O Discord RP real usa <b>asset keys</b>.
+            </div>
+          </div>
+
+          <footer class="footer">
+            <small>
+              Apply/Remove tem rate-limit (UI + backend). Se clicar rápido demais, ele segura para não travar.
+            </small>
+          </footer>
+        </div>
+      </section>
+
+      <!-- RIGHT: preview -->
+      <section class="panel preview">
+        <header class="previewHeader">
+          <div class="previewTitle">Preview</div>
+          <div class="previewHint">simulação do card do Discord</div>
+        </header>
+
+        <div class="previewWrap">
+          <!-- Profile preview -->
+          <div class="profileCard">
+            <div class="banner" id="pvBanner"></div>
+            <div class="profileTop">
+              <div class="profileAvatar" id="pvAvatar"></div>
+              <div class="profileInfo">
+                <div class="profileName" id="pvNameText">Você</div>
+                <div class="profileSub">
+                  <span id="pvHandleText">@handle</span>
+                  <span class="dot">•</span>
+                  <span id="pvStatusText">Online</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Activity preview -->
+          <div class="discordActivityCard">
+            <div class="activityHeader">
+              <span class="pill">Jogando</span>
+              <span class="muted" id="pvAppName">App</span>
+            </div>
+
+            <div class="activityBody">
+              <div class="activityArt" id="pvArt"></div>
+              <div class="activityText">
+                <div class="line strong" id="pvDetails">—</div>
+                <div class="line" id="pvState">—</div>
+                <div class="line muted" id="pvTime">timestamp off</div>
+                <div class="line muted" id="pvAssets">large: — · small: —</div>
+              </div>
+            </div>
+
+            <div class="btnRow">
+              <a class="discordBtn" id="pvBtn1" href="#" target="_blank" rel="noreferrer">Botão 1</a>
+              <a class="discordBtn" id="pvBtn2" href="#" target="_blank" rel="noreferrer">Botão 2</a>
+            </div>
+          </div>
+
+          <div class="note">
+            <div class="noteTitle">Observação</div>
+            <div class="noteText">
+              Preview é visual. O Discord real pode variar levemente (tema, fonte, espaçamentos). O ícone do app aparece como fallback quando assets não são definidos.
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
