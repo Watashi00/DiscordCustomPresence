@@ -3,13 +3,23 @@ use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{
-    env,
     io::{Read, Write},
-    os::unix::net::UnixStream,
-    path::Path,
     process,
     time::{SystemTime, UNIX_EPOCH},
 };
+
+use interprocess::local_socket::prelude::LocalSocketStream;
+use interprocess::local_socket::traits::Stream;
+use interprocess::local_socket::{GenericFilePath, ToFsName};
+
+#[cfg(unix)]
+use std::env;
+
+#[cfg(unix)]
+use std::path::Path;
+
+#[cfg(unix)]
+use libc;
 
 fn now_unix() -> i64 {
     SystemTime::now()
@@ -26,7 +36,9 @@ fn nonce() -> String {
         .collect()
 }
 
-fn send_frame(stream: &mut UnixStream, opcode: i32, payload: &serde_json::Value) -> std::io::Result<()> {
+type IpcStream = LocalSocketStream;
+
+fn send_frame(stream: &mut IpcStream, opcode: i32, payload: &serde_json::Value) -> std::io::Result<()> {
     let bytes = payload.to_string().into_bytes();
     let mut header = Vec::with_capacity(8);
     header.extend_from_slice(&opcode.to_le_bytes());
@@ -37,7 +49,7 @@ fn send_frame(stream: &mut UnixStream, opcode: i32, payload: &serde_json::Value)
     Ok(())
 }
 
-fn read_frame(stream: &mut UnixStream) -> std::io::Result<(i32, serde_json::Value)> {
+fn read_frame(stream: &mut IpcStream) -> std::io::Result<(i32, serde_json::Value)> {
     let mut header = [0u8; 8];
     stream.read_exact(&mut header)?;
 
@@ -52,7 +64,8 @@ fn read_frame(stream: &mut UnixStream) -> std::io::Result<(i32, serde_json::Valu
     Ok((opcode, v))
 }
 
-fn find_discord_ipc() -> Option<String> {
+#[cfg(unix)]
+fn ipc_candidates() -> Vec<String> {
     let uid = unsafe { libc::geteuid() };
     let xdg = env::var("XDG_RUNTIME_DIR").ok();
 
@@ -63,15 +76,37 @@ fn find_discord_ipc() -> Option<String> {
     bases.push(format!("/run/user/{}", uid));
     bases.push("/tmp".to_string());
 
+    let mut out = Vec::new();
     for base in bases {
         for i in 0..10 {
             let p = format!("{}/discord-ipc-{}", base, i);
             if Path::new(&p).exists() {
-                return Some(p);
+                out.push(p);
             }
         }
     }
-    None
+    out
+}
+
+#[cfg(windows)]
+fn ipc_candidates() -> Vec<String> {
+    (0..10)
+        .map(|i| format!(r"\\.\pipe\discord-ipc-{}", i))
+        .collect()
+}
+
+fn connect_ipc() -> anyhow::Result<IpcStream> {
+    for name in ipc_candidates() {
+        let Ok(n) = name.to_fs_name::<GenericFilePath>() else {
+            continue;
+        };
+        if let Ok(s) = LocalSocketStream::connect(n) {
+            return Ok(s);
+        }
+    }
+    Err(anyhow::anyhow!(
+        "Nao achei o socket IPC do Discord. Discord Desktop esta rodando?"
+    ))
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -105,16 +140,13 @@ pub struct UserProfile {
 }
 
 pub struct DiscordRpcClient {
-    stream: UnixStream,
+    stream: IpcStream,
     pid: i64,
 }
 
 impl DiscordRpcClient {
     pub fn connect_and_handshake(client_id: &str) -> anyhow::Result<(Self, serde_json::Value)> {
-        let ipc_path = find_discord_ipc()
-            .ok_or_else(|| anyhow::anyhow!("Não achei o socket IPC do Discord. Discord Desktop está rodando?"))?;
-
-        let mut stream = UnixStream::connect(ipc_path).context("Falha ao conectar no discord-ipc")?;
+        let mut stream = connect_ipc().context("Falha ao conectar no discord-ipc")?;
 
         let hs = json!({ "v": 1, "client_id": client_id });
         send_frame(&mut stream, 0, &hs).context("Falha ao enviar handshake")?;
@@ -265,3 +297,4 @@ pub fn get_user_profile_via_handshake(client_id: &str) -> anyhow::Result<UserPro
 pub fn now_unix_ts() -> i64 {
     now_unix()
 }
+
