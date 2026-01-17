@@ -1,8 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod rpc;
-
-use rpc::{DiscordRpcClient, PresenceCfg};
+use rpc_core::{DiscordRpcClient, PresenceCfg, UserProfile};
 use std::sync::{Arc, Mutex, Condvar};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
@@ -22,7 +20,7 @@ fn rate_check(state: &Mutex<RateState>, min_delay: Duration) -> Result<(), Strin
     let mut st = state.lock().unwrap();
     if let Some(last) = st.last {
         if last.elapsed() < min_delay {
-            return Err("Rate-limit: aguarde um pouco antes de repetir a ação.".to_string());
+            return Err("Rate limit: please wait a moment before repeating the action.".to_string());
         }
     }
     st.last = Some(Instant::now());
@@ -143,9 +141,9 @@ fn rpc_last_error(worker: tauri::State<'_, Arc<RpcWorker>>) -> Option<String> {
 fn get_user_profile(
     client_id: String,
     rate: tauri::State<'_, Mutex<RateState>>,
-) -> Result<rpc::UserProfile, String> {
+) -> Result<UserProfile, String> {
     rate_check(&rate, Duration::from_millis(650))?;
-    rpc::get_user_profile_via_handshake(&client_id).map_err(|e| e.to_string())
+    rpc_core::get_user_profile_via_handshake(&client_id).map_err(|e| e.to_string())
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -209,7 +207,7 @@ async fn rpc_enable(
     {
         let mut st = worker.start_ts.lock().unwrap();
         if st.is_none() {
-            *st = Some(rpc::now_unix_ts());
+            *st = Some(rpc_core::now_unix_ts());
         }
     }
 
@@ -257,7 +255,7 @@ async fn rpc_enable(
             };
 
             // Fixed start timestamp (do not change while running)
-            let start_ts = *w.start_ts.lock().unwrap().get_or_insert_with(rpc::now_unix_ts);
+            let start_ts = *w.start_ts.lock().unwrap().get_or_insert_with(rpc_core::now_unix_ts);
 
             // Ensure persistent IPC client
             if client.is_none() {

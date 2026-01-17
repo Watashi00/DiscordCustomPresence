@@ -1,0 +1,7 @@
+[workspace]
+members = [
+  "crates/rpc-core",
+  "src-tauri",
+  "native",
+]
+resolver = "2"

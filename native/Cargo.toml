@@ -1,0 +1,13 @@
+[package]
+name = "custom_rich_presence_native"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+directories = "5"
+eframe = "0.27"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "blocking"] }
+rpc-core = { path = "../crates/rpc-core" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

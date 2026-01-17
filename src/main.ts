@@ -41,7 +41,7 @@ let startAt = Date.now();
 let cachedAppIconUrl: string | null = null;
 let cachedUserAvatarUrl: string | null = null;
 
-// ===== Persistência (localStorage) =====
+// ===== Persistence (localStorage) =====
 const STORAGE_KEY = "customrp.config.v1";
 let saveTimer: number | null = null;
 
@@ -172,11 +172,11 @@ function renderToggle() {
   const btn = el("toggleBtn") as HTMLButtonElement;
 
   if (rpcEnabled) {
-    btn.textContent = "Desativar";
+    btn.textContent = "Disable";
     btn.classList.remove("primary");
     btn.classList.add("danger");
   } else {
-    btn.textContent = "Ativar";
+    btn.textContent = "Enable";
     btn.classList.remove("danger");
     btn.classList.add("primary");
   }
@@ -185,38 +185,37 @@ function renderToggle() {
 async function updateNow() {
   const cfg = getCfg();
   if (!cfg.client_id) {
-    setStatus("warn", "Client ID", "Client ID é obrigatório.");
+    setStatus("warn", "Client ID", "Client ID is required.");
     return;
   }
 
   setBusy(true);
-  setStatus("busy", "Atualizando", "Aplicando alterações no Rich Presence ativo...");
+  setStatus("busy", "Updating", "Applying changes to the active Rich Presence...");
 
   try {
     await invoke("rpc_update", { cfg });
-    setStatus("ok", "Atualizado", "Alterações aplicadas.");
+    setStatus("ok", "Updated", "Changes applied.");
     saveNow();
   } catch (e: any) {
-    setStatus("warn", "Erro", String(e));
+    setStatus("warn", "Error", String(e));
   } finally {
     setBusy(false);
   }
 }
 
-
 function updatePreview() {
   const cfg = getCfg();
 
-  el("pvDetails").textContent = cfg.details || "—";
-  el("pvState").textContent = cfg.state || "—";
+  el("pvDetails").textContent = cfg.details || "--";
+  el("pvState").textContent = cfg.state || "--";
 
   el("pvTime").textContent = cfg.with_timestamp ? fmtElapsed(now() - startAt) : "timestamp off";
 
   const largeUrl = isHttpUrl(cfg.large_image) ? cfg.large_image!.trim() : null;
   const smallUrl = isHttpUrl(cfg.small_image) ? cfg.small_image!.trim() : null;
 
-  // depreciad
-  //el("pvAssets").textContent = `large: ${li} · small: ${si}`;
+  // deprecated
+  //el("pvAssets").textContent = `large: ${li} / small: ${si}`;
 
   const b1 = el("pvBtn1") as HTMLAnchorElement;
   const b2 = el("pvBtn2") as HTMLAnchorElement;
@@ -241,7 +240,7 @@ function updatePreview() {
   const manualHandle = $("pvHandle").value.trim();
   const manualPresence = $("pvPresenceLine").value.trim();
 
-  el("pvNameText").textContent = manualName || el("pvNameText").textContent || "Você";
+  el("pvNameText").textContent = manualName || el("pvNameText").textContent || "You";
   el("pvHandleText").textContent = manualHandle || el("pvHandleText").textContent || "@handle";
   el("pvStatusText").textContent = manualPresence || el("pvStatusText").textContent || "Online";
 
@@ -258,8 +257,8 @@ function updatePreview() {
     banner.style.backgroundImage = "";
   }
 
-  const avatar = el("pvAvatar"); 
-  // se o usuário passou URL no large/small image do RP, usamos como fallback
+  const avatar = el("pvAvatar");
+  // If the user provided URLs in large/small image, use them as fallback.
   const presenceImgUrl = pickPresenceImageUrl(cfg);
 
   // Large art (main square)
@@ -288,12 +287,12 @@ function updatePreview() {
   : "";
 
   const art = el("pvArt");
-  const c = presenceImgUrl ? presenceImgUrl : cachedAppIconUrl
+  const c = presenceImgUrl ? presenceImgUrl : cachedAppIconUrl;
   const artFinal = c || cardSrc || avatarFinal;
   art.style.backgroundImage = artFinal ? `url("${artFinal}")` : "";
 }
 
-// ===== Persistência =====
+// ===== Persistence =====
 
 function snapshotToStore(): StoredConfig {
   return {
@@ -323,7 +322,7 @@ function snapshotToStore(): StoredConfig {
     cachedAppIconUrl,
     cachedUserAvatarUrl,
     pvAppName: el("pvAppName")?.textContent ?? "App",
-    pvNameText: el("pvNameText")?.textContent ?? "Você",
+    pvNameText: el("pvNameText")?.textContent ?? "You",
     pvHandleText: el("pvHandleText")?.textContent ?? "@handle",
     pvStatusText: el("pvStatusText")?.textContent ?? "Online",
   };
@@ -409,26 +408,26 @@ async function pickImage(targetInputId: string) {
 async function syncUserProfile() {
   const clientId = $("clientId").value.trim();
   if (!clientId) {
-    setStatus("warn", "Client ID", "Preencha o Client ID para sincronizar usuário.");
+    setStatus("warn", "Client ID", "Fill the Client ID to sync the user.");
     return;
   }
 
   setBusy(true);
-  setStatus("busy", "Sincronizando", "Buscando username/avatar via IPC...");
+  setStatus("busy", "Syncing", "Fetching username/avatar via IPC...");
   try {
     const prof = await invoke<UserProfile>("get_user_profile", { clientId });
 
     const display = (prof.global_name && prof.global_name.trim()) ? prof.global_name : prof.username;
-    if (!$("pvDisplayName").value.trim()) $("pvDisplayName").value = display || "Você";
+    if (!$("pvDisplayName").value.trim()) $("pvDisplayName").value = display || "You";
     if (!$("pvHandle").value.trim()) $("pvHandle").value = `@${prof.username ?? "handle"}`;
 
     cachedUserAvatarUrl = prof.avatar_url ?? null;
 
-    setStatus("ok", "Usuário OK", "Preview atualizado com seu username/avatar.");
+    setStatus("ok", "User OK", "Preview updated with your username/avatar.");
     updatePreview();
     saveNow();
   } catch (e: any) {
-    setStatus("warn", "Falhou", String(e));
+    setStatus("warn", "Failed", String(e));
   } finally {
     setBusy(false);
   }
@@ -437,12 +436,12 @@ async function syncUserProfile() {
 async function syncAppMeta() {
   const clientId = $("clientId").value.trim();
   if (!clientId) {
-    setStatus("warn", "Client ID", "Preencha o Client ID para sincronizar app icon.");
+    setStatus("warn", "Client ID", "Fill the Client ID to sync the app icon.");
     return;
   }
 
   setBusy(true);
-  setStatus("busy", "Sincronizando", "Buscando nome/ícone do app...");
+  setStatus("busy", "Syncing", "Fetching app name/icon...");
   try {
     const meta = await invoke<AppMeta>("get_app_meta", { clientId });
     el("pvAppName").textContent = meta?.name || "App";
@@ -453,11 +452,11 @@ async function syncAppMeta() {
       $("pvDisplayName").value = meta.name;
     }
 
-    setStatus("ok", "App OK", "Ícone/nome do app aplicados no preview.");
+    setStatus("ok", "App OK", "App icon/name applied to the preview.");
     updatePreview();
     saveNow();
   } catch (e: any) {
-    setStatus("warn", "Falhou", String(e));
+    setStatus("warn", "Failed", String(e));
   } finally {
     setBusy(false);
   }
@@ -467,30 +466,30 @@ async function enableRpc() {
   const cfg = getCfg();
 
   if (!cfg.client_id) {
-    setStatus("warn", "Client ID", "Client ID é obrigatório.");
+    setStatus("warn", "Client ID", "Client ID is required.");
     return;
   }
 
   const d = $("details").value.trim();
   const s = $("state").value.trim();
   if ((d.length > 0 && d.length < 2) || (s.length > 0 && s.length < 2)) {
-    setStatus("warn", "Texto inválido", "Details/State precisam ter >= 2 caracteres (ou ficar vazio).");
+    setStatus("warn", "Invalid text", "Details/State must be >= 2 characters (or empty).");
     return;
   }
 
   setBusy(true);
-  setStatus("busy", "Ativando", "Iniciando worker do RPC...");
+  setStatus("busy", "Enabling", "Starting the RPC worker...");
 
   try {
     if (cfg.with_timestamp) startAt = now();
 
     await invoke("rpc_enable", { cfg });
 
-    // NÃO seta rpcEnabled aqui — quem manda é o rpc_status()
-    setStatus("busy", "Conectando", "Aguardando confirmação do Discord...");
+    // Do not set rpcEnabled here - rpc_status() is authoritative.
+    setStatus("busy", "Connecting", "Waiting for Discord confirmation...");
     saveNow();
   } catch (e: any) {
-    setStatus("warn", "Erro", String(e));
+    setStatus("warn", "Error", String(e));
   } finally {
     setBusy(false);
   }
@@ -499,18 +498,18 @@ async function enableRpc() {
 async function disableRpc() {
   const clientId = $("clientId").value.trim();
   if (!clientId) {
-    setStatus("warn", "Client ID", "Client ID é obrigatório para desativar.");
+    setStatus("warn", "Client ID", "Client ID is required to disable.");
     return;
   }
 
   setBusy(true);
-  setStatus("busy", "Desativando", "Parando worker e limpando atividade...");
+  setStatus("busy", "Disabling", "Stopping worker and clearing activity...");
   try {
     await invoke("rpc_disable", { clientId });
-    // NÃO seta rpcEnabled aqui — polling vai refletir
+    // Do not set rpcEnabled here - polling will reflect the state.
     saveNow();
   } catch (e: any) {
-    setStatus("warn", "Erro", String(e));
+    setStatus("warn", "Error", String(e));
   } finally {
     setBusy(false);
   }
@@ -524,14 +523,14 @@ async function refreshRpcStatus() {
       rpcEnabled = true;
       renderToggle();
       if (!busy) {
-        setStatus("ok", "Ativo", "Rich Presence exibido no Discord.");
+        setStatus("ok", "Active", "Rich Presence displayed on Discord.");
       }
 
     } else if (st === "connecting") {
       rpcEnabled = true;
       renderToggle();
       if (!busy) {
-        setStatus("busy", "Conectando", "Tentando aplicar presença...");
+        setStatus("busy", "Connecting", "Trying to apply presence...");
       }
 
     } else if (st === "error") {
@@ -539,12 +538,12 @@ async function refreshRpcStatus() {
       renderToggle();
 
       if (!busy) {
-        // 🔴 AQUI É O PONTO-CHAVE
+        // Key point: show last RPC error from backend.
         const err = await invoke<string | null>("rpc_last_error");
         setStatus(
           "warn",
-          "Erro",
-          err ?? "Falha ao aplicar presença no Discord."
+          "Error",
+          err ?? "Failed to apply presence on Discord."
         );
       }
 
@@ -552,16 +551,15 @@ async function refreshRpcStatus() {
       rpcEnabled = false;
       renderToggle();
       if (!busy) {
-        setStatus("ready", "Inativo", "Rich Presence desativado.");
+        setStatus("ready", "Inactive", "Rich Presence disabled.");
       }
     }
   } catch (e) {
     if (!busy) {
-      setStatus("warn", "Erro", String(e));
+      setStatus("warn", "Error", String(e));
     }
   }
 }
-
 
 function bindLivePreviewAndSave() {
   const ids = [
@@ -603,7 +601,7 @@ function pickPresenceImageUrl(cfg: PresenceCfg): string | null {
   const li = (cfg.large_image ?? "").trim();
   const si = (cfg.small_image ?? "").trim();
 
-  // Prefer large image URL, then small
+  // Prefer large image URL, then small.
   if (isHttpUrl(li)) return li;
   if (isHttpUrl(si)) return si;
 
@@ -615,7 +613,7 @@ function bindButtons() {
     if (busy) return;
     if (!canActUI()) return;
 
-    // decide pelo status real no momento
+    // Decide based on current real status.
     await refreshRpcStatus();
 
     if (rpcEnabled) {
@@ -640,16 +638,16 @@ bindLivePreviewAndSave();
 const loaded = loadIfAny();
 updatePreview();
 
-// estado inicial vem do backend
+// Initial state comes from the backend.
 rpcEnabled = false;
 renderToggle();
 
 if (loaded) {
-  setStatus("ok", "Carregado", "Config carregada automaticamente.");
+  setStatus("ok", "Loaded", "Config loaded automatically.");
 } else {
-  setStatus("ready", "Pronto", "Preencha Client ID e clique em Sync/Ativar.");
+  setStatus("ready", "Ready", "Fill Client ID and click Sync/Enable.");
 }
 
-// polling leve do status real do worker/RPC
+// Light polling of real worker/RPC status.
 setInterval(refreshRpcStatus, 1500);
 refreshRpcStatus();

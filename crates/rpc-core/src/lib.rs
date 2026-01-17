@@ -21,6 +21,8 @@ use std::path::Path;
 #[cfg(unix)]
 use libc;
 
+type IpcStream = LocalSocketStream;
+
 fn now_unix() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -35,8 +37,6 @@ fn nonce() -> String {
         .map(char::from)
         .collect()
 }
-
-type IpcStream = LocalSocketStream;
 
 fn send_frame(stream: &mut IpcStream, opcode: i32, payload: &serde_json::Value) -> std::io::Result<()> {
     let bytes = payload.to_string().into_bytes();
@@ -105,7 +105,7 @@ fn connect_ipc() -> anyhow::Result<IpcStream> {
         }
     }
     Err(anyhow::anyhow!(
-        "Nao achei o socket IPC do Discord. Discord Desktop esta rodando?"
+        "Could not find the Discord IPC socket. Is Discord Desktop running?"
     ))
 }
 
@@ -146,12 +146,12 @@ pub struct DiscordRpcClient {
 
 impl DiscordRpcClient {
     pub fn connect_and_handshake(client_id: &str) -> anyhow::Result<(Self, serde_json::Value)> {
-        let mut stream = connect_ipc().context("Falha ao conectar no discord-ipc")?;
+        let mut stream = connect_ipc().context("Failed to connect to discord-ipc")?;
 
         let hs = json!({ "v": 1, "client_id": client_id });
-        send_frame(&mut stream, 0, &hs).context("Falha ao enviar handshake")?;
+        send_frame(&mut stream, 0, &hs).context("Failed to send handshake")?;
 
-        let (_op, hs_resp) = read_frame(&mut stream).context("Falha ao ler resposta do handshake")?;
+        let (_op, hs_resp) = read_frame(&mut stream).context("Failed to read handshake response")?;
         if hs_resp.get("evt").and_then(|v| v.as_str()) == Some("ERROR") {
             return Err(anyhow::anyhow!("Handshake error: {}", hs_resp));
         }
@@ -170,7 +170,7 @@ impl DiscordRpcClient {
         let state_ok = cfg.state.trim().len() >= 2;
         if !details_ok && !state_ok {
             return Err(anyhow::anyhow!(
-                "Presence inválida: preencha Details ou State com pelo menos 2 caracteres."
+                "Invalid presence: fill Details or State with at least 2 characters."
             ));
         }
 
@@ -208,40 +208,37 @@ impl DiscordRpcClient {
             activity["assets"] = json!(assets);
         }
 
-            let mut buttons = Vec::new();
-            for b in cfg.buttons.iter().take(2) {
-                let label = b.label.trim();
-                let mut url = b.url.trim().to_string();
+        let mut buttons = Vec::new();
+        for b in cfg.buttons.iter().take(2) {
+            let label = b.label.trim();
+            let mut url = b.url.trim().to_string();
 
-                if label.is_empty() || url.is_empty() {
-                    continue;
-                }
-
-                // remove espaços
-                url.retain(|c| !c.is_whitespace());
-
-                // força https
-                if url.starts_with("http://") {
-                    url = url.replacen("http://", "https://", 1);
-                }
-
-                if !url.starts_with("https://") {
-                    continue;
-                }
-
-                let safe_label = if label.chars().count() > 32 {
-                    label.chars().take(32).collect::<String>()
-                } else {
-                    label.to_string()
-                };
-
-                buttons.push(json!({ "label": safe_label, "url": url }));
+            if label.is_empty() || url.is_empty() {
+                continue;
             }
 
-            if !buttons.is_empty() {
-                activity["buttons"] = json!(buttons);
+            url.retain(|c| !c.is_whitespace());
+
+            if url.starts_with("http://") {
+                url = url.replacen("http://", "https://", 1);
             }
 
+            if !url.starts_with("https://") {
+                continue;
+            }
+
+            let safe_label = if label.chars().count() > 32 {
+                label.chars().take(32).collect::<String>()
+            } else {
+                label.to_string()
+            };
+
+            buttons.push(json!({ "label": safe_label, "url": url }));
+        }
+
+        if !buttons.is_empty() {
+            activity["buttons"] = json!(buttons);
+        }
 
         let payload = json!({
             "cmd": "SET_ACTIVITY",
@@ -249,9 +246,9 @@ impl DiscordRpcClient {
             "nonce": nonce()
         });
 
-        send_frame(&mut self.stream, 1, &payload).context("Falha ao enviar SET_ACTIVITY")?;
+        send_frame(&mut self.stream, 1, &payload).context("Failed to send SET_ACTIVITY")?;
 
-        let (_op2, resp) = read_frame(&mut self.stream).context("Falha ao ler ACK do SET_ACTIVITY")?;
+        let (_op2, resp) = read_frame(&mut self.stream).context("Failed to read SET_ACTIVITY ACK")?;
         if resp.get("evt").and_then(|v| v.as_str()) == Some("ERROR") {
             return Err(anyhow::anyhow!("SET_ACTIVITY error: {}", resp));
         }
@@ -266,7 +263,7 @@ impl DiscordRpcClient {
             "nonce": nonce()
         });
 
-        send_frame(&mut self.stream, 1, &payload).context("Falha ao enviar CLEAR SET_ACTIVITY")?;
+        send_frame(&mut self.stream, 1, &payload).context("Failed to send CLEAR SET_ACTIVITY")?;
         let _ = read_frame(&mut self.stream);
         Ok(())
     }
@@ -278,7 +275,7 @@ pub fn get_user_profile_via_handshake(client_id: &str) -> anyhow::Result<UserPro
     let user = hs_resp
         .get("data")
         .and_then(|d| d.get("user"))
-        .ok_or_else(|| anyhow::anyhow!("Handshake não retornou data.user: {}", hs_resp))?;
+        .ok_or_else(|| anyhow::anyhow!("Handshake did not return data.user: {}", hs_resp))?;
 
     let id = user.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let username = user.get("username").and_then(|v| v.as_str()).unwrap_or("user").to_string();
@@ -293,8 +290,6 @@ pub fn get_user_profile_via_handshake(client_id: &str) -> anyhow::Result<UserPro
     Ok(UserProfile { id, username, global_name, avatar_hash, avatar_url })
 }
 
-/// útil se quiser setar start_ts no backend
 pub fn now_unix_ts() -> i64 {
     now_unix()
 }
-
